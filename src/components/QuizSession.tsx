@@ -1,23 +1,28 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { QuizConfig, QuizSession, QuizResult } from '@/types/quiz'
-import { Loader2, CheckCircle, XCircle, ArrowRight, Trophy, RotateCcw } from 'lucide-react'
+import { QuizConfig, QuizSession, QuizQuestion } from '@/types/quiz'
+import { Loader2, ArrowRight, Trophy, RotateCcw, XCircle } from 'lucide-react'
+import QuestionCard from './QuestionCard'
+import QuizProgress from './QuizProgress'
+import QuizCompletion from './QuizCompletion'
+import { useQuizNavigation } from '@/hooks/useQuizNavigation'
 
 interface QuizSessionProps {
   config: QuizConfig
+  existingQuestions?: QuizQuestion[]
   onComplete: (session: QuizSession) => void
   onSaveProgress: (session: QuizSession) => void
   onBack: () => void
 }
 
-export default function QuizSessionComponent({ config, onComplete, onSaveProgress, onBack }: QuizSessionProps) {
+export default function QuizSessionComponent({ config, existingQuestions, onComplete, onSaveProgress, onBack }: QuizSessionProps) {
   const [session, setSession] = useState<QuizSession>({
     id: `session-${Date.now()}`,
     certificateName: config.certificateName,
     language: config.language,
-    targetQuestions: config.numberOfQuizzes,
-    currentQuestions: [],
+    targetQuestions: existingQuestions ? existingQuestions.length : config.numberOfQuizzes,
+    currentQuestions: existingQuestions || [],
     answers: [],
     score: 0,
     completed: false,
@@ -25,16 +30,67 @@ export default function QuizSessionComponent({ config, onComplete, onSaveProgres
     config
   })
   
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [isGenerating, setIsGenerating] = useState(false)
-  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null)
-  const [hasAnswered, setHasAnswered] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isPreparingQuestions, setIsPreparingQuestions] = useState(false)
 
-  // Generate the first question on mount
+  const quizNavigation = useQuizNavigation({
+    questions: session.currentQuestions,
+    onComplete: (results) => {
+      const completedSession = {
+        ...session,
+        answers: results,
+        score: results.filter(r => r.isCorrect).length,
+        completed: true
+      }
+      setSession(completedSession)
+      onComplete(completedSession)
+    }
+  })
+
+  // Generate the first question on mount and start background generation only if no existing questions
   useEffect(() => {
-    generateNextQuestion()
+    if (!existingQuestions || existingQuestions.length === 0) {
+      generateNextQuestion()
+      startBackgroundGeneration()
+    }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const startBackgroundGeneration = async () => {
+    setIsPreparingQuestions(true)
+    
+    // Generate questions in the background after the first one
+    for (let i = 1; i < config.numberOfQuizzes; i++) {
+      try {
+        await new Promise(resolve => setTimeout(resolve, 500)) // Stagger requests
+        
+        const response = await fetch('/api/generate-question', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            config,
+            questionNumber: i + 1
+          }),
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          if (data.question) {
+            setSession(prev => ({
+              ...prev,
+              currentQuestions: [...prev.currentQuestions, data.question]
+            }))
+          }
+        }
+      } catch (err) {
+        console.warn(`Failed to generate background question ${i + 1}:`, err)
+      }
+    }
+    
+    setIsPreparingQuestions(false)
+  }
 
   const generateNextQuestion = async () => {
     setIsGenerating(true)
@@ -75,35 +131,17 @@ export default function QuizSessionComponent({ config, onComplete, onSaveProgres
     }
   }
 
-  const handleAnswerSelect = (answerIndex: number) => {
-    if (hasAnswered) return
-    setSelectedAnswer(answerIndex)
-  }
-
   const handleSubmitAnswer = () => {
-    if (selectedAnswer === null || hasAnswered) return
-
-    const currentQuestion = session.currentQuestions[currentQuestionIndex]
-    const isCorrect = selectedAnswer === currentQuestion.correctAnswer
-
-    const result: QuizResult = {
-      questionId: currentQuestion.id,
-      selectedAnswer,
-      isCorrect
-    }
-
-    const newAnswers = [...session.answers, result]
-    const newScore = newAnswers.filter(a => a.isCorrect).length
+    const result = quizNavigation.handleSubmitAnswer()
+    if (!result) return
 
     const updatedSession = {
       ...session,
-      answers: newAnswers,
-      score: newScore
+      answers: result.newAnswers,
+      score: result.score
     }
 
     setSession(updatedSession)
-    setHasAnswered(true)
-
     // Save progress after each answer
     onSaveProgress(updatedSession)
   }
@@ -117,29 +155,22 @@ export default function QuizSessionComponent({ config, onComplete, onSaveProgres
   }
 
   const handleNext = () => {
-    if (currentQuestionIndex + 1 < session.targetQuestions) {
+    if (quizNavigation.currentQuestionIndex + 1 < session.targetQuestions) {
       // Move to next question or generate if needed
-      if (currentQuestionIndex + 1 >= session.currentQuestions.length) {
+      if (quizNavigation.currentQuestionIndex + 1 >= session.currentQuestions.length) {
+        // Only generate if background generation hasn't provided the question yet
         generateNextQuestion()
       }
-      setCurrentQuestionIndex(prev => prev + 1)
-      setSelectedAnswer(null)
-      setHasAnswered(false)
+      quizNavigation.handleNext()
     } else {
-      // Quiz completed
-      const completedSession = {
-        ...session,
-        completed: true
-      }
-      setSession(completedSession)
-      onComplete(completedSession)
+      // Quiz completed - let the navigation hook handle completion
+      quizNavigation.handleNext()
     }
   }
 
-  const currentQuestion = session.currentQuestions[currentQuestionIndex]
-  const progress = ((currentQuestionIndex + 1) / session.targetQuestions) * 100
+  const { currentQuestion } = quizNavigation
 
-  if (isGenerating && (session.currentQuestions.length === 0 || currentQuestionIndex >= session.currentQuestions.length)) {
+  if (isGenerating && (session.currentQuestions.length === 0 || quizNavigation.currentQuestionIndex >= session.currentQuestions.length)) {
     return (
       <div className="w-full max-w-4xl mx-auto">
         <div className="glass-card rounded-3xl p-8">
@@ -150,7 +181,7 @@ export default function QuizSessionComponent({ config, onComplete, onSaveProgres
             <h2 className="text-2xl font-light text-slate-700 mb-4">
               {session.currentQuestions.length === 0 
                 ? "Generating Your First Question"
-                : `Generating Question ${currentQuestionIndex + 1}`
+                : `Generating Question ${quizNavigation.currentQuestionIndex + 1}`
               }
             </h2>
             <p className="text-slate-500">
@@ -161,12 +192,17 @@ export default function QuizSessionComponent({ config, onComplete, onSaveProgres
                 <div className="w-full bg-white/40 rounded-full h-2 mb-2">
                   <div
                     className="bg-gradient-button-primary h-2 rounded-full transition-all duration-500"
-                    style={{ width: `${(currentQuestionIndex / session.targetQuestions) * 100}%` }}
+                    style={{ width: `${(quizNavigation.currentQuestionIndex / session.targetQuestions) * 100}%` }}
                   ></div>
                 </div>
                 <p className="text-xs text-slate-500">
-                  {currentQuestionIndex} of {session.targetQuestions} questions
+                  {quizNavigation.currentQuestionIndex} of {session.targetQuestions} questions
                 </p>
+              </div>
+            )}
+            {isPreparingQuestions && (
+              <div className="mt-4 text-xs text-slate-400">
+                Preparing remaining questions in background...
               </div>
             )}
           </div>
@@ -210,101 +246,38 @@ export default function QuizSessionComponent({ config, onComplete, onSaveProgres
     return null
   }
 
-  if (session.completed) {
+  if (quizNavigation.isCompleted) {
     return (
-      <div className="w-full max-w-4xl mx-auto">
-        <div className="glass-card rounded-3xl p-8">
-          <div className="text-center">
-            <div className="w-16 h-16 rounded-full bg-gradient-button-primary flex items-center justify-center mx-auto mb-6">
-              <Trophy className="w-8 h-8 text-white" />
-            </div>
-            <h2 className="text-3xl font-light text-slate-700 mb-4">Quiz Completed!</h2>
-            <div className="text-4xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text text-transparent mb-2">
-              {session.score}/{session.targetQuestions}
-            </div>
-            <p className="text-slate-500 mb-8">
-              You scored {Math.round((session.score / session.targetQuestions) * 100)}% on your {config.certificateName} quiz
-            </p>
-            <button
-              onClick={onBack}
-              className="px-8 py-4 bg-gradient-button-primary text-white rounded-2xl font-medium hover:shadow-lg hover:scale-[1.02] transition-all"
-            >
-              Back to Quiz Menu
-            </button>
-          </div>
-        </div>
-      </div>
+      <QuizCompletion
+        score={session.score}
+        totalQuestions={session.targetQuestions}
+        title={`${config.certificateName} quiz`}
+        onBack={onBack}
+        showRestartButton={false}
+      />
     )
   }
 
   return (
     <div className="w-full max-w-4xl mx-auto">
-      {/* Progress Bar */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-sm text-slate-600 font-medium">
-            Question {currentQuestionIndex + 1} of {session.targetQuestions}
-          </span>
-          <span className="text-sm text-slate-600">
-            Score: {session.score}/{session.answers.length}
-          </span>
-        </div>
-        <div className="w-full bg-white/40 rounded-full h-2">
-          <div
-            className="bg-gradient-button-primary h-2 rounded-full transition-all duration-500"
-            style={{ width: `${progress}%` }}
-          ></div>
-        </div>
-      </div>
+      <QuizProgress
+        currentQuestion={quizNavigation.currentQuestionIndex + 1}
+        totalQuestions={session.targetQuestions}
+        score={session.score}
+        answeredQuestions={session.answers.length}
+        showScore={true}
+      />
 
       {/* Question Card */}
-      <div className="glass-card rounded-3xl p-8 mb-8">
-        <div className="mb-6">
-          <h2 className="text-2xl font-light text-slate-700 mb-2">
-            {currentQuestion.question}
-          </h2>
-        </div>
+      <QuestionCard
+        question={currentQuestion}
+        selectedAnswer={quizNavigation.selectedAnswer}
+        hasAnswered={quizNavigation.hasAnswered}
+        onAnswerSelect={quizNavigation.handleAnswerSelect}
+        showExplanation={true}
+      />
 
-        <div className="space-y-3 mb-8">
-          {currentQuestion.options.map((option, index) => (
-            <button
-              key={index}
-              onClick={() => handleAnswerSelect(index)}
-              disabled={hasAnswered}
-              className={`w-full text-left p-4 rounded-2xl border transition-all ${
-                hasAnswered
-                  ? index === currentQuestion.correctAnswer
-                    ? 'bg-green-100 border-green-300 text-green-800'
-                    : index === selectedAnswer && selectedAnswer !== currentQuestion.correctAnswer
-                    ? 'bg-red-100 border-red-300 text-red-800'
-                    : 'bg-gray-100 border-gray-200 text-gray-600'
-                  : selectedAnswer === index
-                  ? 'bg-purple-100 border-purple-300 text-purple-800'
-                  : 'bg-white/60 border-white/40 text-slate-700 hover:bg-white/80'
-              }`}
-            >
-              <div className="flex items-center">
-                {option}
-                {hasAnswered && index === currentQuestion.correctAnswer && (
-                  <CheckCircle className="w-5 h-5 ml-auto text-green-600" />
-                )}
-                {hasAnswered && index === selectedAnswer && selectedAnswer !== currentQuestion.correctAnswer && (
-                  <XCircle className="w-5 h-5 ml-auto text-red-600" />
-                )}
-              </div>
-            </button>
-          ))}
-        </div>
-
-        {hasAnswered && (
-          <div className="bg-blue-50/50 border border-blue-200/50 rounded-2xl p-6 mb-6">
-            <h3 className="font-medium text-blue-700 mb-2">Explanation:</h3>
-            <p className="text-blue-600 text-sm leading-relaxed">
-              {currentQuestion.explanation}
-            </p>
-          </div>
-        )}
-
+      <div className="glass-card rounded-3xl p-8">
         <div className="flex justify-between">
           <button
             onClick={handleExitQuiz}
@@ -313,10 +286,10 @@ export default function QuizSessionComponent({ config, onComplete, onSaveProgres
             Exit Quiz
           </button>
 
-          {!hasAnswered ? (
+          {!quizNavigation.hasAnswered ? (
             <button
               onClick={handleSubmitAnswer}
-              disabled={selectedAnswer === null}
+              disabled={quizNavigation.selectedAnswer === null}
               className="px-6 py-3 bg-gradient-button-primary text-white rounded-2xl font-medium hover:shadow-lg hover:scale-[1.02] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
               Submit Answer
@@ -326,7 +299,7 @@ export default function QuizSessionComponent({ config, onComplete, onSaveProgres
               onClick={handleNext}
               className="flex items-center px-6 py-3 bg-gradient-button-primary text-white rounded-2xl font-medium hover:shadow-lg hover:scale-[1.02] transition-all"
             >
-              {currentQuestionIndex + 1 < session.targetQuestions ? (
+              {quizNavigation.currentQuestionIndex + 1 < session.targetQuestions ? (
                 <>
                   Next Question
                   <ArrowRight className="w-4 h-4 ml-2" />
@@ -337,7 +310,9 @@ export default function QuizSessionComponent({ config, onComplete, onSaveProgres
                   <Trophy className="w-4 h-4 ml-2" />
                 </>
               )}
-              {isGenerating && <Loader2 className="w-4 h-4 ml-2 animate-spin" />}
+              {(isGenerating || (quizNavigation.currentQuestionIndex + 1 >= session.currentQuestions.length && quizNavigation.currentQuestionIndex + 1 < session.targetQuestions)) && (
+                <Loader2 className="w-4 h-4 ml-2 animate-spin" />
+              )}
             </button>
           )}
         </div>

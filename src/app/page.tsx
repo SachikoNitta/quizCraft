@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react'
 import AppLayout from '@/components/AppLayout'
 import QuizForm from '@/components/QuizForm'
 import QuizList from '@/components/QuizList'
-import QuizTaker from '@/components/QuizTaker'
 import QuizSessionComponent from '@/components/QuizSession'
 import { Quiz, QuizConfig, QuizSession } from '@/types/quiz'
 import { loadQuizzesFromStorage, saveQuizzesToStorage, loadSessionsFromStorage, saveSessionsToStorage } from '@/lib/storage'
@@ -79,16 +78,62 @@ export default function Home() {
   }
 
   const handleSessionComplete = (session: QuizSession) => {
-    // Mark session as completed and save
-    const completedSession = { ...session, completed: true }
-    handleSaveProgress(completedSession)
+    if (currentConfig) {
+      // This is a new quiz session from QuizForm - save it
+      const completedSession = { ...session, completed: true }
+      handleSaveProgress(completedSession)
+    } else if (currentQuiz) {
+      // This is an existing quiz from browsing - update its completion status
+      setQuizzes(prev => {
+        const updatedQuizzes = prev.map(quiz => {
+          if (quiz.id === currentQuiz.id) {
+            return {
+              ...quiz,
+              title: quiz.title.replace(' (In Progress)', '').replace(' (Complete)', '') + ' (Complete)'
+            }
+          }
+          return quiz
+        })
+        saveQuizzesToStorage(updatedQuizzes)
+        return updatedQuizzes
+      })
+    }
+    
     setCurrentConfig(null)
+    setCurrentQuiz(null)
     setActiveTab('browse')
   }
 
   const handleTakeQuiz = (quiz: Quiz) => {
-    setCurrentQuiz(quiz)
+    // Mark quiz as in progress when starting (unless already complete)
+    if (!quiz.title.includes('(Complete)') && !quiz.title.includes('(In Progress)')) {
+      setQuizzes(prev => {
+        const updatedQuizzes = prev.map(q => {
+          if (q.id === quiz.id) {
+            return {
+              ...q,
+              title: q.title + ' (In Progress)'
+            }
+          }
+          return q
+        })
+        saveQuizzesToStorage(updatedQuizzes)
+        return updatedQuizzes
+      })
+      // Update the current quiz reference with the new title
+      setCurrentQuiz({ ...quiz, title: quiz.title + ' (In Progress)' })
+    } else {
+      setCurrentQuiz(quiz)
+    }
     setActiveTab('test')
+  }
+
+  const handleDeleteQuiz = (quizToDelete: Quiz) => {
+    setQuizzes(prev => {
+      const updatedQuizzes = prev.filter(quiz => quiz.id !== quizToDelete.id)
+      saveQuizzesToStorage(updatedQuizzes)
+      return updatedQuizzes
+    })
   }
 
   const handleBackToBrowse = () => {
@@ -125,7 +170,11 @@ export default function Home() {
 
       {activeTab === 'browse' && !currentQuiz && !currentConfig && (
         <div className="animate-in fade-in duration-500">
-          <QuizList quizzes={quizzes} onTakeQuiz={handleTakeQuiz} />
+          <QuizList 
+            quizzes={quizzes} 
+            onTakeQuiz={handleTakeQuiz}
+            onDeleteQuiz={handleDeleteQuiz}
+          />
         </div>
       )}
 
@@ -142,7 +191,18 @@ export default function Home() {
 
       {activeTab === 'test' && currentQuiz && !currentConfig && (
         <div className="animate-in fade-in duration-500">
-          <QuizTaker quiz={currentQuiz} onBack={handleBackToBrowse} />
+          <QuizSessionComponent 
+            config={{
+              apiKey: '',
+              certificateName: currentQuiz.certificateName,
+              language: currentQuiz.language,
+              numberOfQuizzes: currentQuiz.questions.length
+            }}
+            existingQuestions={currentQuiz.questions}
+            onComplete={handleSessionComplete}
+            onSaveProgress={() => {}} // Don't save progress for existing quiz attempts
+            onBack={handleBackToBrowse}
+          />
         </div>
       )}
     </AppLayout>
