@@ -1,28 +1,38 @@
 'use client'
 
+import { useRouter, usePathname } from 'next/navigation'
 import { Sparkles, BookOpen } from 'lucide-react'
 
 interface AppLayoutProps {
   children: React.ReactNode
   activeTab: 'generate' | 'browse' | 'test'
   onTabChange: (tab: 'generate' | 'browse' | 'test') => void
-  quizCount: number
+  quizCount?: number
 }
 
-export default function AppLayout({ children, activeTab, onTabChange, quizCount }: AppLayoutProps) {
+export default function AppLayout({ children, quizCount = 0 }: AppLayoutProps) {
+  const router = useRouter()
+  const pathname = usePathname()
+
   const navigationItems = [
     {
       id: 'generate' as const,
       label: 'Start Quiz',
       icon: Sparkles,
+      href: '/create'
     },
     {
       id: 'browse' as const,
       label: 'My Quizzes',
       icon: BookOpen,
-      badge: quizCount > 0 ? quizCount : undefined
+      badge: quizCount > 0 ? quizCount : undefined,
+      href: '/browse'
     }
   ]
+
+  const handleNavigation = (href: string) => {
+    router.push(href)
+  }
 
   return (
     <div className="app-container">
@@ -49,9 +59,9 @@ export default function AppLayout({ children, activeTab, onTabChange, quizCount 
           {navigationItems.map((item) => (
             <button
               key={item.id}
-              onClick={() => onTabChange(item.id)}
+              onClick={() => handleNavigation(item.href)}
               className={`flex items-center space-x-2 px-4 py-2 rounded-xl font-medium transition-all ${
-                activeTab === item.id 
+                pathname === item.href
                   ? 'bg-gradient-button-primary text-white shadow-lg' 
                   : 'text-slate-600 hover:bg-white/40'
               }`}
