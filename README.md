@@ -41,6 +41,12 @@ Generate quizzes in 20+ languages including:
 - **Session history**: Browse all your quiz attempts with timestamps
 - **Status badges**: Clear visual distinction between completed and ongoing sessions
 
+## 📸 Screenshots
+
+![QuizCraft Interface](public/screenshot.png)
+
+*Experience the clean, modern interface with real-time quiz generation and beautiful glassmorphism effects*
+
 ## Getting Started
 
 ### Prerequisites
