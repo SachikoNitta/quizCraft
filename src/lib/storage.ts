@@ -1,4 +1,4 @@
-import { Quiz, QuizSession } from '@/types/quiz'
+import { QuizStorage, QuizSession } from '@/types/quiz'
 
 const STORAGE_KEYS = {
   QUIZZES: 'quizcraft_quizzes',
@@ -27,21 +27,21 @@ function safeJsonStore(key: string, data: unknown): void {
   }
 }
 
-// Quiz storage functions
-export function loadQuizzesFromStorage(): Quiz[] {
+// QuizStorage storage functions
+export function loadQuizzesFromStorage(): QuizStorage[] {
   if (typeof window === 'undefined') return []
   
   const stored = localStorage.getItem(STORAGE_KEYS.QUIZZES)
   const quizzes = safeJsonParse(stored, [])
   
   // Convert date strings back to Date objects
-  return quizzes.map((quiz: Quiz & { createdAt: string }) => ({
+  return quizzes.map((quiz: QuizStorage & { createdAt: string }) => ({
     ...quiz,
     createdAt: new Date(quiz.createdAt)
   }))
 }
 
-export function saveQuizzesToStorage(quizzes: Quiz[]): void {
+export function saveQuizzesToStorage(quizzes: QuizStorage[]): void {
   if (typeof window === 'undefined') return
   safeJsonStore(STORAGE_KEYS.QUIZZES, quizzes)
 }

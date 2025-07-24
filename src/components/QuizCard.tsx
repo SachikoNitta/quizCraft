@@ -1,14 +1,14 @@
 'use client'
 
-import { Quiz, SUPPORTED_LANGUAGES } from '@/types/quiz'
+import { QuizStorage, SUPPORTED_LANGUAGES } from '@/types/quiz'
 import { exportQuizAsJSON } from '@/lib/gemini'
 import { Calendar, FileText, Trash2, Play, Globe, Clock, CheckCircle } from 'lucide-react'
 
 interface QuizCardProps {
-  quiz: Quiz
+  quiz: QuizStorage
   index?: number
-  onTakeQuiz: (quiz: Quiz) => void
-  onDeleteQuiz?: (quiz: Quiz) => void
+  onTakeQuiz: (quiz: QuizStorage) => void
+  onDeleteQuiz?: (quiz: QuizStorage) => void
   showExportButtons?: boolean
 }
 
@@ -16,7 +16,7 @@ export default function QuizCard({ quiz, index = 0, onTakeQuiz, onDeleteQuiz, sh
   const isIncomplete = quiz.title.includes('(In Progress)')
   const isComplete = quiz.title.includes('(Complete)') || !quiz.title.includes('(In Progress)')
 
-  const handleDeleteQuiz = (e: React.MouseEvent) => {
+  const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation()
     if (onDeleteQuiz && confirm(`Are you sure you want to delete "${quiz.title.replace(' (Complete)', '').replace(' (In Progress)', '')}"?`)) {
       onDeleteQuiz(quiz)
@@ -28,7 +28,7 @@ export default function QuizCard({ quiz, index = 0, onTakeQuiz, onDeleteQuiz, sh
     const jsonString = exportQuizAsJSON(quiz)
     try {
       await navigator.clipboard.writeText(jsonString)
-      alert('Quiz JSON copied to clipboard!')
+      alert('QuizStorage JSON copied to clipboard!')
     } catch (err) {
       console.error('Failed to copy to clipboard:', err)
       alert('Failed to copy to clipboard')
@@ -104,9 +104,9 @@ export default function QuizCard({ quiz, index = 0, onTakeQuiz, onDeleteQuiz, sh
         {showExportButtons && (
           <>
             <button
-              onClick={handleDeleteQuiz}
+              onClick={handleDelete}
               className="w-12 h-12 bg-red-50 hover:bg-red-100 border border-red-200/50 rounded-2xl flex items-center justify-center transition-all duration-300 hover:scale-110"
-              title="Delete Quiz"
+              title="Delete QuizStorage"
             >
               <Trash2 className="w-4 h-4 text-red-500" />
             </button>

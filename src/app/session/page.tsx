@@ -4,12 +4,12 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import AppLayout from '@/components/AppLayout'
 import QuizSessionComponent from '@/components/QuizSession'
-import { Quiz, QuizConfig, QuizSession } from '@/types/quiz'
+import { QuizStorage, QuizConfig, QuizSession } from '@/types/quiz'
 import { loadQuizzesFromStorage, saveQuizzesToStorage, loadSessionsFromStorage, saveSessionsToStorage } from '@/lib/storage'
 
 export default function QuizSessionPage() {
   const [currentConfig, setCurrentConfig] = useState<QuizConfig | null>(null)
-  const [currentQuiz, setCurrentQuiz] = useState<Quiz | null>(null)
+  const [currentQuiz, setCurrentQuiz] = useState<QuizStorage | null>(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -31,11 +31,11 @@ export default function QuizSessionPage() {
   const handleSaveProgress = (session: QuizSession) => {
     if (session.completed) {
       // Save completed quiz
-      const quiz: Quiz = {
+      const quiz: QuizStorage = {
         id: session.id,
-        title: `${session.certificateName} Practice Quiz (Complete)`,
-        certificateName: session.certificateName,
-        language: session.language,
+        title: `${session.config.certificateName} Practice QuizStorage (Complete)`,
+        certificateName: session.config.certificateName,
+        language: session.config.language,
         questions: session.currentQuestions,
         createdAt: session.createdAt
       }
@@ -61,7 +61,7 @@ export default function QuizSessionPage() {
 
   const handleSessionComplete = (session: QuizSession) => {
     if (currentConfig) {
-      // This is a new quiz session from QuizForm - save it
+      // This is a new quiz session from QuizStorageForm - save it
       const completedSession = { ...session, completed: true }
       handleSaveProgress(completedSession)
     } else if (currentQuiz) {
@@ -117,7 +117,7 @@ export default function QuizSessionPage() {
             apiKey: '',
             certificateName: currentQuiz!.certificateName,
             language: currentQuiz!.language,
-            numberOfQuizzes: currentQuiz!.questions.length
+            numberOfQuestions: currentQuiz!.questions.length
           }}
           existingQuestions={currentQuiz?.questions}
           onComplete={handleSessionComplete}

@@ -1,33 +1,16 @@
+export interface QuizConfig {
+  apiKey: string
+  certificateName: string
+  numberOfQuestions: number
+  language: string
+}
+
 export interface QuizQuestion {
   id: string
   question: string
   options: string[]
   correctAnswer: number
   explanation: string
-}
-
-export interface Quiz {
-  id: string
-  title: string
-  certificateName: string
-  language: string
-  questions: QuizQuestion[]
-  createdAt: Date
-}
-
-export interface QuizConfig {
-  apiKey: string
-  certificateName: string
-  numberOfQuizzes: number
-  language: string
-}
-
-export interface QuizGenerationProgress {
-  completed: number
-  total: number
-  currentBatch: number
-  totalBatches: number
-  status: string
 }
 
 export interface QuizResult {
@@ -38,21 +21,35 @@ export interface QuizResult {
 
 export interface QuizSession {
   id: string
-  certificateName: string
-  language: string
-  targetQuestions: number
   currentQuestions: QuizQuestion[]
-  answers: QuizResult[]
+  userAnswers: QuizResult[]
   score: number
   completed: boolean
   createdAt: Date
   config: QuizConfig
 }
 
+export interface QuizStorage {
+  id: string
+  title: string
+  certificateName: string
+  language: string
+  questions: QuizQuestion[]
+  createdAt: Date
+}
+
 export interface ActiveQuizSession {
   session: QuizSession
   currentQuestionIndex: number
   isGeneratingNext: boolean
+}
+
+export interface QuizGenerationProgress {
+  completed: number
+  total: number
+  currentBatch: number
+  totalBatches: number
+  status: string
 }
 
 export const SUPPORTED_LANGUAGES = [

@@ -140,16 +140,16 @@ export async function POST(request: NextRequest) {
     const config: QuizConfig = await request.json()
 
     // Validate the request
-    if (!config.apiKey || !config.certificateName || !config.numberOfQuizzes || !config.language) {
+    if (!config.apiKey || !config.certificateName || !config.numberOfQuestions || !config.language) {
       return NextResponse.json(
-        { error: 'Missing required fields: apiKey, certificateName, numberOfQuizzes, language' },
+        { error: 'Missing required fields: apiKey, certificateName, numberOfQuestions, language' },
         { status: 400 }
       )
     }
 
-    if (config.numberOfQuizzes < 1 || config.numberOfQuizzes > 20) {
+    if (config.numberOfQuestions < 1 || config.numberOfQuestions > 20) {
       return NextResponse.json(
-        { error: 'numberOfQuizzes must be between 1 and 20' },
+        { error: 'numberOfQuestions must be between 1 and 20' },
         { status: 400 }
       )
     }
@@ -171,7 +171,7 @@ export async function POST(request: NextRequest) {
     const maxBatchSize = 5 // Generate max 5 questions per API call
     const allQuestions: QuizQuestion[] = []
     
-    let remainingQuestions = config.numberOfQuizzes
+    let remainingQuestions = config.numberOfQuestions
     let batchIndex = 0
     
     while (remainingQuestions > 0) {
@@ -211,7 +211,7 @@ export async function POST(request: NextRequest) {
       title: `${config.certificateName} Practice Quiz`,
       certificateName: config.certificateName,
       language: config.language,
-      questions: allQuestions.slice(0, config.numberOfQuizzes), // Ensure we don't exceed requested count
+      questions: allQuestions.slice(0, config.numberOfQuestions), // Ensure we don't exceed requested count
       createdAt: new Date()
     }
 

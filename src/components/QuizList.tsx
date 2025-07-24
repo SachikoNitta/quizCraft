@@ -1,14 +1,14 @@
 'use client'
 
-import { Quiz } from '@/types/quiz'
+import { QuizStorage } from '@/types/quiz'
 import { getStorageInfo } from '@/lib/storage'
 import { FileText, HardDrive } from 'lucide-react'
 import QuizCard from './QuizCard'
 
 interface QuizListProps {
-  quizzes: Quiz[]
-  onTakeQuiz: (quiz: Quiz) => void
-  onDeleteQuiz: (quiz: Quiz) => void
+  quizzes: QuizStorage[]
+  onTakeQuiz: (quiz: QuizStorage) => void
+  onDeleteQuiz: (quiz: QuizStorage) => void
 }
 
 export default function QuizList({ quizzes, onTakeQuiz, onDeleteQuiz }: QuizListProps) {
@@ -33,7 +33,7 @@ export default function QuizList({ quizzes, onTakeQuiz, onDeleteQuiz }: QuizList
   return (
     <div className="w-full">
       <div className="text-center mb-8">
-        <h2 className="text-2xl font-light text-slate-700 mb-2">Your Quiz Collection</h2>
+        <h2 className="text-2xl font-light text-slate-700 mb-2">Your QuizStorage Collection</h2>
         <p className="text-slate-500 mb-3">{quizzes.length} quiz{quizzes.length !== 1 ? 'es' : ''} ready for practice</p>
         <div className="flex items-center justify-center text-xs text-slate-400 bg-white/30 rounded-full px-3 py-1 w-fit mx-auto">
           <HardDrive className="w-3 h-3 mr-1" />

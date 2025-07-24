@@ -12,7 +12,7 @@ export default function QuizForm({ onStartQuiz }: QuizFormProps) {
   const [config, setConfig] = useState<QuizConfig>({
     apiKey: '',
     certificateName: '',
-    numberOfQuizzes: 5,
+    numberOfQuestions: 5,
     language: 'en'
   })
 
@@ -106,7 +106,7 @@ export default function QuizForm({ onStartQuiz }: QuizFormProps) {
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="numberOfQuizzes" className="flex items-center text-sm font-medium text-slate-600 mb-3">
+            <label htmlFor="numberOfQuestions" className="flex items-center text-sm font-medium text-slate-600 mb-3">
               <div className="w-8 h-8 rounded-full bg-gradient-button-secondary flex items-center justify-center mr-3">
                 <Hash className="w-4 h-4 text-white" />
               </div>
@@ -114,11 +114,11 @@ export default function QuizForm({ onStartQuiz }: QuizFormProps) {
             </label>
             <input
               type="number"
-              id="numberOfQuizzes"
+              id="numberOfQuestions"
               min="1"
               max="20"
-              value={config.numberOfQuizzes}
-              onChange={(e) => setConfig(prev => ({ ...prev, numberOfQuizzes: parseInt(e.target.value) }))}
+              value={config.numberOfQuestions}
+              onChange={(e) => setConfig(prev => ({ ...prev, numberOfQuestions: parseInt(e.target.value) }))}
               className="w-full px-4 py-4 bg-white/60 border-0 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-300/50 transition-all placeholder-slate-400 text-slate-700"
               required
             />

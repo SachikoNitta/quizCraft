@@ -4,11 +4,11 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import AppLayout from '@/components/AppLayout'
 import QuizList from '@/components/QuizList'
-import { Quiz } from '@/types/quiz'
+import { QuizStorage } from '@/types/quiz'
 import { loadQuizzesFromStorage, saveQuizzesToStorage } from '@/lib/storage'
 
 export default function BrowseQuizzesPage() {
-  const [quizzes, setQuizzes] = useState<Quiz[]>([])
+  const [quizzes, setQuizzes] = useState<QuizStorage[]>([])
   const router = useRouter()
 
   useEffect(() => {
@@ -16,7 +16,7 @@ export default function BrowseQuizzesPage() {
     setQuizzes(loadedQuizzes)
   }, [])
 
-  const handleTakeQuiz = (quiz: Quiz) => {
+  const handleTakeQuiz = (quiz: QuizStorage) => {
     // Mark quiz as in progress when starting (unless already complete)
     if (!quiz.title.includes('(Complete)') && !quiz.title.includes('(In Progress)')) {
       setQuizzes(prev => {
@@ -40,7 +40,7 @@ export default function BrowseQuizzesPage() {
     router.push('/session')
   }
 
-  const handleDeleteQuiz = (quizToDelete: Quiz) => {
+  const handleDeleteQuiz = (quizToDelete: QuizStorage) => {
     setQuizzes(prev => {
       const updatedQuizzes = prev.filter(quiz => quiz.id !== quizToDelete.id)
       saveQuizzesToStorage(updatedQuizzes)

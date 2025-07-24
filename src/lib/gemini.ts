@@ -1,17 +1,17 @@
-import { Quiz, QuizConfig, QuizGenerationProgress } from '@/types/quiz'
+import { QuizStorage, QuizConfig, QuizGenerationProgress } from '@/types/quiz'
 
 export async function generateQuizzes(
   config: QuizConfig, 
   onProgress?: (progress: QuizGenerationProgress) => void
-): Promise<Quiz[]> {
+): Promise<QuizStorage[]> {
   
   try {
     // Simulate progress for now since we're making a single API call
-    const totalBatches = Math.ceil(config.numberOfQuizzes / 5)
+    const totalBatches = Math.ceil(config.numberOfQuestions / 5)
     
     onProgress?.({
       completed: 0,
-      total: config.numberOfQuizzes,
+      total: config.numberOfQuestions,
       currentBatch: 0,
       totalBatches,
       status: 'Starting quiz generation...'
@@ -38,17 +38,17 @@ export async function generateQuizzes(
     }
 
     // Convert date string back to Date object
-    const quiz: Quiz = {
+    const quiz: QuizStorage = {
       ...data.quiz,
       createdAt: new Date(data.quiz.createdAt)
     }
 
     onProgress?.({
-      completed: config.numberOfQuizzes,
-      total: config.numberOfQuizzes,
+      completed: config.numberOfQuestions,
+      total: config.numberOfQuestions,
       currentBatch: totalBatches,
       totalBatches,
-      status: 'Quiz generation completed!'
+      status: 'QuizStorage generation completed!'
     })
 
     return [quiz]
@@ -61,11 +61,11 @@ export async function generateQuizzes(
   }
 }
 
-export function exportQuizAsJSON(quiz: Quiz): string {
+export function exportQuizAsJSON(quiz: QuizStorage): string {
   return JSON.stringify(quiz, null, 2)
 }
 
-export function importQuizFromJSON(jsonString: string): Quiz {
+export function importQuizFromJSON(jsonString: string): QuizStorage {
   try {
     const quiz = JSON.parse(jsonString)
     
@@ -75,7 +75,7 @@ export function importQuizFromJSON(jsonString: string): Quiz {
 
     quiz.createdAt = new Date(quiz.createdAt)
     
-    return quiz as Quiz
+    return quiz as QuizStorage
   } catch {
     throw new Error('Invalid JSON format')
   }
