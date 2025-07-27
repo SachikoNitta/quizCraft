@@ -77,47 +77,49 @@ npm start
 
 ## 🚀 How to Use
 
-### 1. Start a Live Quiz Session
+### 1. Setup Your Settings
 
-1. Click **"Start Quiz"** in the header navigation
+1. Navigate to **"Settings"** to configure your API key
 2. Enter your **Gemini API Key** (get one from [Google AI Studio](https://makersuite.google.com/app/apikey))
-3. Specify the **Certificate Name** (e.g., "AWS Solutions Architect", "Google Cloud Professional Cloud Architect")
-4. Select your **preferred language** from 20+ supported options
-5. Choose the **number of questions** (1-20)
-6. Click **"Start Quiz Session"**
+3. Select your **preferred language** from 20+ supported options
+4. Save your settings
 
-### 2. Interactive Quiz Experience
+### 2. Create and Manage Certificates
 
-- **Real-time generation**: First question generates immediately, subsequent questions create as you progress
-- **Answer and learn**: Select your answer, submit, and get instant detailed explanations
+1. Go to the **"Certificates"** tab
+2. Click **"Add Certificate"** to create a new certification
+3. Enter the certificate name (e.g., "AWS Solutions Architect", "Google Cloud Professional Cloud Architect")
+4. Add an optional description
+5. Click **"Create Certificate"**
+
+### 3. Generate Questions
+
+- For each certificate, click **"Generate Questions"**
+- Choose the **number of questions** (1-20)
+- Questions generate using your saved API key and language settings
+- View generated questions with the **"View"** button
+
+### 4. Take Quiz Directly from Certificates
+
+- Once questions are generated, click **"Take Quiz"** on any certificate card
+- **Real-time quiz experience**: Answer questions with instant detailed explanations
 - **Visual progress**: Track your advancement with the progress bar and question counter
 - **Auto-save**: Every answer is automatically saved - never lose your progress
 - **Exit flexibility**: Use "Exit Quiz" to pause and continue later
 
-### 3. Browse Your Quiz Collection
+### 5. Advanced Certificate Management
 
-- Navigate to **"My Quizzes"** to see all your quiz sessions
-- **Visual status indicators**:
-  - 🟢 **Complete**: Finished quizzes with all questions answered
-  - 🟠 **In Progress**: Partially completed sessions you can resume
-- **Quick actions**:
-  - **Start Quiz**: Begin taking the quiz or resume where you left off
-  - **Download**: Export as JSON file for backup
-  - **Copy**: Copy JSON to clipboard for sharing
+- **Add More Questions**: Generate additional questions for existing certificates
+- **View Questions**: Review all generated questions with answers and explanations
+- **Delete Certificates**: Remove certificates and all associated questions
+- **Question Bank**: Build comprehensive question banks for each certification
 
-### 4. Persistent Storage
+### 6. Persistent Storage
 
-- **Automatic saving**: All progress saves to your browser's local storage
-- **Permanent data**: Quizzes persist through browser refreshes and computer restarts
+- **Automatic saving**: All certificates, questions, and quiz progress save to your browser's local storage
+- **Permanent data**: Data persists through browser refreshes and computer restarts
 - **Privacy-focused**: All data stays on your device - nothing sent to servers
-- **Storage info**: View your total quiz count and storage usage
-
-### 5. Advanced Features
-
-- **Resume incomplete quizzes**: Continue exactly where you left off
-- **Multiple concurrent sessions**: Work on different certifications simultaneously  
-- **Export/Import**: Backup your quiz data or share with others
-- **Responsive design**: Seamless experience across all devices
+- **Organized storage**: Certificates and questions are organized for easy management
 
 ## API Key Setup
 
@@ -158,15 +160,18 @@ The quiz maker can generate questions for any professional certification, includ
 src/
 ├── app/
 │   ├── page.tsx                    # Main application entry point
+│   ├── certificates/               # Certificate management pages
+│   ├── settings/                   # Settings configuration pages
+│   ├── session/                    # Quiz session pages
 │   └── api/
 │       ├── generate-quiz/          # Legacy bulk generation API
 │       └── generate-question/      # Real-time single question API
 ├── components/
 │   ├── AppLayout.tsx              # Header navigation layout
-│   ├── QuizForm.tsx               # Quiz session setup form
+│   ├── CertificateManager.tsx     # Certificate creation and management
+│   ├── SettingsForm.tsx           # Settings configuration form
 │   ├── QuizSession.tsx            # Live quiz interface with real-time generation
-│   ├── QuizList.tsx               # Quiz collection browser with status indicators
-│   └── QuizTaker.tsx              # Completed quiz review interface
+│   └── QuizCard.tsx               # Individual quiz card component
 ├── lib/
 │   ├── gemini.ts                  # AI API integration utilities
 │   └── storage.ts                 # localStorage persistence layer
@@ -176,10 +181,11 @@ src/
 
 ### Key Innovations
 
-- **Real-time Question Generation**: Questions generate one-by-one as users progress
-- **Persistent Session Management**: Advanced localStorage implementation with session tracking
+- **Certificate-Based Organization**: Organize quizzes by certification with dedicated question banks
+- **Direct Quiz Access**: Take quizzes directly from certificate cards without separate management
+- **Persistent Question Storage**: Build comprehensive question banks that persist across sessions
+- **Real-time Question Generation**: Generate questions on-demand for any certification
 - **Server-side AI Processing**: CORS-compliant API routes handle all AI interactions
-- **Progressive Question Building**: Each answered question is immediately stored and available for browsing
 
 ## 🔧 Troubleshooting
 
@@ -229,9 +235,10 @@ If you encounter issues:
 ### Data Export/Backup
 
 To backup your quiz data:
-1. Go to "My Quizzes" tab
-2. Use the download button on each quiz to export as JSON
-3. Store the JSON files safely for reimport if needed
+1. Go to "Certificates" tab
+2. Use the "View" button to see questions for each certificate
+3. Copy question data for manual backup if needed
+4. All data is stored in browser localStorage for automatic persistence
 
 ### Privacy & Security
 

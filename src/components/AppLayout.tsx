@@ -7,10 +7,9 @@ interface AppLayoutProps {
   children: React.ReactNode
   activeTab: 'settings' | 'certificates'
   onTabChange: (tab: 'settings' | 'certificates') => void
-  quizCount?: number
 }
 
-export default function AppLayout({ children, quizCount = 0 }: AppLayoutProps) {
+export default function AppLayout({ children }: AppLayoutProps) {
   const router = useRouter()
   const pathname = usePathname()
 
@@ -67,11 +66,6 @@ export default function AppLayout({ children, quizCount = 0 }: AppLayoutProps) {
             >
               <item.icon className="w-4 h-4" />
               <span className="hidden sm:inline">{item.label}</span>
-              {item.badge && (
-                <span className="bg-white/20 text-xs px-2 py-0.5 rounded-full">
-                  {item.badge}
-                </span>
-              )}
             </button>
           ))}
         </nav>

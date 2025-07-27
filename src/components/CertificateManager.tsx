@@ -10,7 +10,7 @@ import {
   loadSettingsFromStorage,
   createOrUpdateQuestionSet
 } from '@/lib/storage'
-import { FileText, Plus, Trash2, BookOpen, Settings, Eye, Zap, Play } from 'lucide-react'
+import { FileText, Plus, Trash2, BookOpen, Settings, Eye, Zap, Play, CheckCircle, AlertCircle, Loader2, Sparkles } from 'lucide-react'
 
 interface CertificateManagerProps {
   certificates: Certificate[]
@@ -25,6 +25,16 @@ export default function CertificateManager({ certificates, onUpdate }: Certifica
   const [newCertName, setNewCertName] = useState('')
   const [newCertDescription, setNewCertDescription] = useState('')
   const [viewingQuestions, setViewingQuestions] = useState<Certificate | null>(null)
+  const [isValidating, setIsValidating] = useState(false)
+  const [validationResult, setValidationResult] = useState<{
+    isValid: boolean
+    correctedName?: string
+    description?: string
+    suggestions?: string[]
+    confidence: 'high' | 'medium' | 'low'
+  } | null>(null)
+  const [showValidation, setShowValidation] = useState(false)
+  const [isAutoDescription, setIsAutoDescription] = useState(false)
   const router = useRouter()
 
   const settings = loadSettingsFromStorage()
@@ -38,17 +48,112 @@ export default function CertificateManager({ certificates, onUpdate }: Certifica
     }
   }
 
+  const validateCertificationName = async (name: string) => {
+    if (!name.trim()) return
+    
+    if (!hasValidSettings) {
+      alert('Please configure your API key in Settings first to enable certification validation')
+      return
+    }
+
+    setIsValidating(true)
+    setValidationResult(null)
+    setShowValidation(false)
+    
+    try {
+      const response = await fetch('/api/validate-certification', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          certificationName: name.trim(),
+          apiKey: settings.apiKey
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        console.error('Validation API error:', errorData)
+        
+        // Show detailed error for debugging
+        if (errorData.rawResponse) {
+          console.log('AI Raw Response:', errorData.rawResponse)
+          alert(`Validation failed. Raw AI response: ${errorData.rawResponse.substring(0, 200)}...`)
+        } else {
+          throw new Error(errorData.error || `Validation failed with status ${response.status}`)
+        }
+        return
+      }
+
+      const result = await response.json()
+      
+      setValidationResult(result)
+      setShowValidation(true)
+      
+      // Auto-fill description if validation is successful and description is empty
+      if (result.isValid && result.description && !newCertDescription.trim()) {
+        setNewCertDescription(result.description)
+        setIsAutoDescription(true)
+      }
+    } catch (error) {
+      console.error('Validation error:', error)
+      // Show error to user for debugging
+      alert(`Validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    } finally {
+      setIsValidating(false)
+    }
+  }
+
   const handleCreateCertificate = async () => {
     if (!newCertName.trim()) return
     
     try {
-      createCertificate(newCertName.trim(), newCertDescription.trim() || undefined)
+      const finalName = validationResult?.correctedName || newCertName.trim()
+      createCertificate(finalName, newCertDescription.trim() || undefined)
       setIsCreatingNew(false)
       setNewCertName('')
       setNewCertDescription('')
+      setValidationResult(null)
+      setShowValidation(false)
+      setIsAutoDescription(false)
       onUpdate()
     } catch (error) {
       alert(error instanceof Error ? error.message : 'Failed to create certificate')
+    }
+  }
+
+  const handleNameChange = (name: string) => {
+    setNewCertName(name)
+    setValidationResult(null)
+    setShowValidation(false)
+  }
+
+  const handleDescriptionChange = (description: string) => {
+    setNewCertDescription(description)
+    setIsAutoDescription(false) // User is manually editing, no longer auto-generated
+  }
+
+  const handleUseCorrectedName = () => {
+    if (validationResult?.correctedName) {
+      setNewCertName(validationResult.correctedName)
+      // Auto-fill description when using corrected name
+      if (validationResult.description && !newCertDescription.trim()) {
+        setNewCertDescription(validationResult.description)
+        setIsAutoDescription(true)
+      }
+      setValidationResult({ ...validationResult, isValid: true })
+    }
+  }
+
+  const handleUseSuggestion = async (suggestion: string) => {
+    setNewCertName(suggestion)
+    setValidationResult(null)
+    setShowValidation(false)
+    
+    // Auto-validate the suggestion to get its description
+    if (hasValidSettings) {
+      await validateCertificationName(suggestion)
     }
   }
 
@@ -189,22 +294,139 @@ export default function CertificateManager({ certificates, onUpdate }: Certifica
           </button>
         ) : (
           <div className="space-y-4">
-            <input
-              type="text"
-              value={newCertName}
-              onChange={(e) => setNewCertName(e.target.value)}
-              className="w-full px-4 py-3 bg-white/60 border-0 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-300/50 transition-all"
-              placeholder="Certificate name (e.g., AWS Solutions Architect)"
-              required
-            />
+            <div className="space-y-2">
+              <div className="relative">
+                <input
+                  type="text"
+                  value={newCertName}
+                  onChange={(e) => handleNameChange(e.target.value)}
+                  className="w-full px-4 py-3 bg-white/60 border-0 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-300/50 transition-all pr-12"
+                  placeholder="Certificate name (e.g., AWS Solutions Architect) - Click ✓ to validate"
+                  required
+                />
+                {newCertName.trim() && (
+                  <button
+                    onClick={() => validateCertificationName(newCertName)}
+                    disabled={isValidating}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 hover:bg-white/60 rounded-lg transition-all"
+                    title={hasValidSettings ? "Validate certification name" : "Configure API key in Settings to enable validation"}
+                  >
+                    {isValidating ? (
+                      <Loader2 className="w-4 h-4 text-slate-400 animate-spin" />
+                    ) : (
+                      <CheckCircle className={`w-4 h-4 transition-all ${
+                        hasValidSettings 
+                          ? 'text-slate-400 hover:text-purple-500' 
+                          : 'text-slate-300 cursor-not-allowed'
+                      }`} />
+                    )}
+                  </button>
+                )}
+              </div>
+
+              {/* Validation Results */}
+              {showValidation && validationResult && (
+                <div className={`p-4 rounded-2xl border ${
+                  validationResult.isValid 
+                    ? 'bg-green-50 border-green-200' 
+                    : 'bg-orange-50 border-orange-200'
+                }`}>
+                  <div className="flex items-start gap-3">
+                    {validationResult.isValid ? (
+                      <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                    ) : (
+                      <AlertCircle className="w-5 h-5 text-orange-600 mt-0.5 flex-shrink-0" />
+                    )}
+                    <div className="flex-1">
+                      {validationResult.isValid ? (
+                        <div>
+                          <p className="text-sm font-medium text-green-700 mb-1">
+                            ✓ Valid certification name
+                          </p>
+                          {validationResult.correctedName && validationResult.correctedName !== newCertName.trim() && (
+                            <div className="space-y-2">
+                              <p className="text-xs text-green-600">
+                                Suggested official name: <span className="font-medium">{validationResult.correctedName}</span>
+                              </p>
+                              <button
+                                onClick={handleUseCorrectedName}
+                                className="text-xs bg-green-100 hover:bg-green-200 text-green-700 px-2 py-1 rounded-lg transition-all"
+                              >
+                                Use official name
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div>
+                          <p className="text-sm font-medium text-orange-700 mb-2">
+                            Certification not recognized
+                          </p>
+                          {validationResult.correctedName && (
+                            <div className="mb-3">
+                              <p className="text-xs text-orange-600 mb-1">
+                                Did you mean: <span className="font-medium">{validationResult.correctedName}</span>
+                              </p>
+                              <button
+                                onClick={handleUseCorrectedName}
+                                className="text-xs bg-orange-100 hover:bg-orange-200 text-orange-700 px-2 py-1 rounded-lg transition-all"
+                              >
+                                Use this name
+                              </button>
+                            </div>
+                          )}
+                          {validationResult.suggestions && validationResult.suggestions.length > 0 && (
+                            <div>
+                              <p className="text-xs text-orange-600 mb-2">Similar certifications:</p>
+                              <div className="flex flex-wrap gap-1">
+                                {validationResult.suggestions.map((suggestion, index) => (
+                                  <button
+                                    key={index}
+                                    onClick={() => handleUseSuggestion(suggestion)}
+                                    className="text-xs bg-orange-100 hover:bg-orange-200 text-orange-700 px-2 py-1 rounded-lg transition-all"
+                                  >
+                                    {suggestion}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      <p className="text-xs text-slate-500 mt-2">
+                        Confidence: {validationResult.confidence}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
             
-            <input
-              type="text"
-              value={newCertDescription}
-              onChange={(e) => setNewCertDescription(e.target.value)}
-              className="w-full px-4 py-3 bg-white/60 border-0 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-300/50 transition-all"
-              placeholder="Description (optional)"
-            />
+            <div className="space-y-2">
+              <div className="relative">
+                <textarea
+                  value={newCertDescription}
+                  onChange={(e) => handleDescriptionChange(e.target.value)}
+                  className="w-full px-4 py-3 bg-white/60 border-0 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-300/50 transition-all resize-none h-20"
+                  placeholder="Description (optional - will be auto-generated from validation)"
+                  rows={2}
+                />
+                {isAutoDescription && newCertDescription && (
+                  <div className="absolute top-2 right-2">
+                    <div className="flex items-center bg-purple-100 text-purple-600 text-xs px-2 py-1 rounded-full">
+                      <Sparkles className="w-3 h-3 mr-1" />
+                      AI Generated
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              {isAutoDescription && (
+                <p className="text-xs text-purple-600 bg-purple-50 px-3 py-2 rounded-xl">
+                  💡 This description was automatically generated based on the certification validation. You can edit it as needed.
+                </p>
+              )}
+            </div>
             
             <div className="flex gap-3">
               <button
@@ -219,6 +441,9 @@ export default function CertificateManager({ certificates, onUpdate }: Certifica
                   setIsCreatingNew(false)
                   setNewCertName('')
                   setNewCertDescription('')
+                  setValidationResult(null)
+                  setShowValidation(false)
+                  setIsAutoDescription(false)
                 }}
                 className="px-4 py-3 bg-white/40 text-slate-600 rounded-2xl hover:bg-white/60 transition-all duration-200"
               >
