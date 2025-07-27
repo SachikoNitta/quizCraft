@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { QuizConfig, QuizSession, QuizQuestion } from '@/types/quiz'
-import { loadCertificatesFromStorage } from '@/lib/storage'
+import { loadCertificatesFromStorage, loadSettingsFromStorage } from '@/lib/storage'
 import { Loader2, ArrowRight, Trophy } from 'lucide-react'
 import QuestionCard from './QuestionCard'
 import QuizProgress from './QuizProgress'
@@ -60,6 +60,9 @@ export default function QuizSessionComponent({ config, existingQuestions, onComp
   const startBackgroundGeneration = async () => {
     setIsPreparingQuestions(true)
     
+    // Get current settings for API key and language
+    const settings = loadSettingsFromStorage()
+    
     // Calculate how many more questions we need to generate
     const questionsNeeded = session.config.numberOfQuestions - session.currentQuestions.length
     
@@ -75,6 +78,8 @@ export default function QuizSessionComponent({ config, existingQuestions, onComp
           },
           body: JSON.stringify({
             config,
+            apiKey: settings.apiKey,
+            language: settings.language,
             questionNumber: session.currentQuestions.length + i + 1
           }),
         })

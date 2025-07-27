@@ -14,7 +14,7 @@ interface ValidationResponse {
   confidence: 'high' | 'medium' | 'low'
 }
 
-function createFallbackValidation(certificationName: string, _aiResponse: string): ValidationResponse | null {
+function createFallbackValidation(certificationName: string): ValidationResponse | null {
   // Basic keyword-based validation for common certifications
   const name = certificationName.toLowerCase()
   
@@ -122,7 +122,7 @@ Example valid: AWS SAA
       console.error('Parse error:', parseError)
       
       // Fallback: try to create a basic validation response
-      const fallbackResult = createFallbackValidation(certificationName, text)
+      const fallbackResult = createFallbackValidation(certificationName)
       if (fallbackResult) {
         return NextResponse.json(fallbackResult)
       }

@@ -137,10 +137,13 @@ async function generateQuestionBatch(
 
 export async function POST(request: NextRequest) {
   try {
-    const config: QuizConfig = await request.json()
+    const body = await request.json()
+    const config: QuizConfig = body.config
+    const apiKey: string = body.apiKey
+    const language: string = body.language
 
     // Validate the request
-    if (!config.apiKey || !config.certificateId || !config.certificateName || !config.numberOfQuestions || !config.language) {
+    if (!apiKey || !config.certificateId || !config.certificateName || !config.numberOfQuestions || !language) {
       return NextResponse.json(
         { error: 'Missing required fields: apiKey, certificateId, certificateName, numberOfQuestions, language' },
         { status: 400 }
@@ -154,7 +157,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const genAI = new GoogleGenerativeAI(config.apiKey)
+    const genAI = new GoogleGenerativeAI(apiKey)
     const model = genAI.getGenerativeModel({ 
       model: 'gemini-2.0-flash',
       generationConfig: {
@@ -165,7 +168,7 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    const languageName = getLanguageName(config.language)
+    const languageName = getLanguageName(language)
     
     // Generate questions in smaller batches to avoid timeouts
     const maxBatchSize = 5 // Generate max 5 questions per API call
@@ -210,7 +213,7 @@ export async function POST(request: NextRequest) {
       id: `quiz-${Date.now()}`,
       title: `${config.certificateName} Practice Quiz`,
       certificateId: config.certificateId,
-      language: config.language,
+      language: language,
       questions: allQuestions.slice(0, config.numberOfQuestions), // Ensure we don't exceed requested count
       createdAt: new Date()
     }

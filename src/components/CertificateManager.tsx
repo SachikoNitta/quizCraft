@@ -166,11 +166,9 @@ export default function CertificateManager({ certificates, onUpdate }: Certifica
     setIsGenerating(true)
     try {
       const config: QuizConfig = {
-        apiKey: settings.apiKey,
         certificateId: certificate.id,
         certificateName: certificate.name,
-        numberOfQuestions,
-        language: settings.language
+        numberOfQuestions
       }
 
       const generatedQuestions = []
@@ -183,6 +181,8 @@ export default function CertificateManager({ certificates, onUpdate }: Certifica
           },
           body: JSON.stringify({
             config,
+            apiKey: settings.apiKey,
+            language: settings.language,
             questionNumber: i + 1
           }),
         })

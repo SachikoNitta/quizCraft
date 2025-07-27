@@ -35,11 +35,12 @@ export default function QuizSessionPage() {
       const certificate = certificates.find(cert => cert.id === session.config.certificateId)
       const certificateName = certificate?.name || 'Unknown Certificate'
       
+      const settings = loadSettingsFromStorage()
       const quiz: QuizStorage = {
         id: session.id,
         title: `${certificateName} Practice Quiz (Complete)`,
         certificateId: session.config.certificateId,
-        language: session.config.language,
+        language: settings.language,
         questions: session.currentQuestions,
         createdAt: session.createdAt
       }
@@ -114,10 +115,8 @@ export default function QuizSessionPage() {
       <div className="animate-in fade-in duration-500">
         <QuizSessionComponent 
           config={currentConfig || {
-            apiKey: loadSettingsFromStorage().apiKey,
             certificateId: currentQuiz!.certificateId,
             certificateName: loadCertificatesFromStorage().find(cert => cert.id === currentQuiz!.certificateId)?.name || 'Unknown',
-            language: currentQuiz!.language,
             numberOfQuestions: currentQuiz!.questions.length
           }}
           existingQuestions={currentQuiz?.questions}

@@ -91,20 +91,6 @@ export function saveSettingsToStorage(settings: AppSettings): void {
   safeJsonStore(STORAGE_KEYS.SETTINGS, settings)
 }
 
-// Clear all stored data (useful for debugging or user preference)
-export function clearAllStorage(): void {
-  if (typeof window === 'undefined') return
-  
-  try {
-    localStorage.removeItem(STORAGE_KEYS.QUIZZES)
-    localStorage.removeItem(STORAGE_KEYS.SESSIONS)
-    localStorage.removeItem(STORAGE_KEYS.CERTIFICATES)
-    localStorage.removeItem(STORAGE_KEYS.QUESTION_SETS)
-    localStorage.removeItem(STORAGE_KEYS.SETTINGS)
-  } catch (error) {
-    console.warn('Failed to clear localStorage:', error)
-  }
-}
 
 // Certificate storage functions
 export function loadCertificatesFromStorage(): Certificate[] {
@@ -145,10 +131,6 @@ export function createCertificate(name: string, description?: string): Certifica
   return certificate
 }
 
-export function getCertificateByName(name: string): Certificate | undefined {
-  const certificates = loadCertificatesFromStorage()
-  return certificates.find(cert => cert.name.toLowerCase() === name.toLowerCase())
-}
 
 // Question Set storage functions
 export function loadQuestionSetsFromStorage(): QuestionSet[] {

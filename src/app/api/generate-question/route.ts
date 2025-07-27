@@ -127,17 +127,19 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const config: QuizConfig = body.config
+    const apiKey: string = body.apiKey
+    const language: string = body.language
     const questionNumber: number = body.questionNumber || 1
 
     // Validate the request
-    if (!config.apiKey || !config.certificateId || !config.certificateName || !config.language) {
+    if (!apiKey || !config.certificateId || !config.certificateName || !language) {
       return NextResponse.json(
         { error: 'Missing required fields: apiKey, certificateId, certificateName, language' },
         { status: 400 }
       )
     }
 
-    const genAI = new GoogleGenerativeAI(config.apiKey)
+    const genAI = new GoogleGenerativeAI(apiKey)
     const model = genAI.getGenerativeModel({ 
       model: 'gemini-2.0-flash',
       generationConfig: {
@@ -148,7 +150,7 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    const languageName = getLanguageName(config.language)
+    const languageName = getLanguageName(language)
     
     const question = await generateSingleQuestion(
       model, 
