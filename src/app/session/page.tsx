@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import AppLayout from '@/components/AppLayout'
 import QuizSessionComponent from '@/components/QuizSession'
 import { QuizStorage, QuizConfig, QuizSession } from '@/types/quiz'
-import { loadQuizzesFromStorage, saveQuizzesToStorage, loadSessionsFromStorage, saveSessionsToStorage } from '@/lib/storage'
+import { loadQuizzesFromStorage, saveQuizzesToStorage, loadSessionsFromStorage, saveSessionsToStorage, loadCertificatesFromStorage, loadSettingsFromStorage } from '@/lib/storage'
 
 export default function QuizSessionPage() {
   const [currentConfig, setCurrentConfig] = useState<QuizConfig | null>(null)
@@ -31,10 +31,14 @@ export default function QuizSessionPage() {
   const handleSaveProgress = (session: QuizSession) => {
     if (session.completed) {
       // Save completed quiz
+      const certificates = loadCertificatesFromStorage()
+      const certificate = certificates.find(cert => cert.id === session.config.certificateId)
+      const certificateName = certificate?.name || 'Unknown Certificate'
+      
       const quiz: QuizStorage = {
         id: session.id,
-        title: `${session.config.certificateName} Practice QuizStorage (Complete)`,
-        certificateName: session.config.certificateName,
+        title: `${certificateName} Practice Quiz (Complete)`,
+        certificateId: session.config.certificateId,
         language: session.config.language,
         questions: session.currentQuestions,
         createdAt: session.createdAt
@@ -82,7 +86,7 @@ export default function QuizSessionPage() {
     // Clear sessionStorage and redirect
     sessionStorage.removeItem('quizConfig')
     sessionStorage.removeItem('currentQuiz')
-    router.push('/browse')
+    router.push('/certificates')
   }
 
   const handleBack = () => {
@@ -90,16 +94,12 @@ export default function QuizSessionPage() {
     sessionStorage.removeItem('quizConfig')
     sessionStorage.removeItem('currentQuiz')
     
-    if (currentConfig) {
-      router.push('/create')
-    } else {
-      router.push('/browse')
-    }
+    router.push('/certificates')
   }
 
   if (!currentConfig && !currentQuiz) {
     return (
-      <AppLayout activeTab="test" onTabChange={() => {}}>
+      <AppLayout activeTab="certificates" onTabChange={() => {}}>
         <div className="flex items-center justify-center min-h-64">
           <div className="text-center">
             <h2 className="text-xl text-slate-600 mb-4">Loading quiz session...</h2>
@@ -110,12 +110,13 @@ export default function QuizSessionPage() {
   }
 
   return (
-    <AppLayout activeTab="test" onTabChange={() => {}}>
+    <AppLayout activeTab="certificates" onTabChange={() => {}}>
       <div className="animate-in fade-in duration-500">
         <QuizSessionComponent 
           config={currentConfig || {
-            apiKey: '',
-            certificateName: currentQuiz!.certificateName,
+            apiKey: loadSettingsFromStorage().apiKey,
+            certificateId: currentQuiz!.certificateId,
+            certificateName: loadCertificatesFromStorage().find(cert => cert.id === currentQuiz!.certificateId)?.name || 'Unknown',
             language: currentQuiz!.language,
             numberOfQuestions: currentQuiz!.questions.length
           }}

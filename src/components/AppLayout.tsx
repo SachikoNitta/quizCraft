@@ -1,12 +1,12 @@
 'use client'
 
 import { useRouter, usePathname } from 'next/navigation'
-import { Sparkles, BookOpen } from 'lucide-react'
+import { Settings, FileText, Sparkles } from 'lucide-react'
 
 interface AppLayoutProps {
   children: React.ReactNode
-  activeTab: 'generate' | 'browse' | 'test'
-  onTabChange: (tab: 'generate' | 'browse' | 'test') => void
+  activeTab: 'settings' | 'certificates'
+  onTabChange: (tab: 'settings' | 'certificates') => void
   quizCount?: number
 }
 
@@ -16,17 +16,16 @@ export default function AppLayout({ children, quizCount = 0 }: AppLayoutProps) {
 
   const navigationItems = [
     {
-      id: 'generate' as const,
-      label: 'Start Quiz',
-      icon: Sparkles,
-      href: '/create'
+      id: 'settings' as const,
+      label: 'Settings',
+      icon: Settings,
+      href: '/settings'
     },
     {
-      id: 'browse' as const,
-      label: 'My Quizzes',
-      icon: BookOpen,
-      badge: quizCount > 0 ? quizCount : undefined,
-      href: '/browse'
+      id: 'certificates' as const,
+      label: 'Certificates',
+      icon: FileText,
+      href: '/certificates'
     }
   ]
 

@@ -7,8 +7,8 @@ export default function Home() {
   const router = useRouter()
 
   useEffect(() => {
-    // Redirect to create page by default
-    router.push('/create')
+    // Redirect to certificates page by default
+    router.push('/certificates')
   }, [router])
 
   return (

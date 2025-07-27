@@ -2,6 +2,7 @@
 
 import { QuizStorage, SUPPORTED_LANGUAGES } from '@/types/quiz'
 import { exportQuizAsJSON } from '@/lib/gemini'
+import { loadCertificatesFromStorage } from '@/lib/storage'
 import { Calendar, FileText, Trash2, Play, Globe, Clock, CheckCircle } from 'lucide-react'
 
 interface QuizCardProps {
@@ -15,6 +16,10 @@ interface QuizCardProps {
 export default function QuizCard({ quiz, index = 0, onTakeQuiz, onDeleteQuiz, showExportButtons = true }: QuizCardProps) {
   const isIncomplete = quiz.title.includes('(In Progress)')
   const isComplete = quiz.title.includes('(Complete)') || !quiz.title.includes('(In Progress)')
+  
+  const certificates = loadCertificatesFromStorage()
+  const certificate = certificates.find(cert => cert.id === quiz.certificateId)
+  const certificateName = certificate?.name || 'Unknown Certificate'
 
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -61,7 +66,7 @@ export default function QuizCard({ quiz, index = 0, onTakeQuiz, onDeleteQuiz, sh
               )}
             </div>
             <p className="text-sm text-slate-500 mb-3">
-              {quiz.certificateName}
+              {certificateName}
             </p>
           </div>
           <div className={`w-12 h-12 rounded-full flex items-center justify-center ml-3 ${

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { QuizConfig, QuizSession, QuizQuestion } from '@/types/quiz'
+import { loadCertificatesFromStorage } from '@/lib/storage'
 import { Loader2, ArrowRight, Trophy } from 'lucide-react'
 import QuestionCard from './QuestionCard'
 import QuizProgress from './QuizProgress'
@@ -29,6 +30,11 @@ export default function QuizSessionComponent({ config, existingQuestions, onComp
       numberOfQuestions: existingQuestions.length
     } : config
   })
+
+  // Get certificate name from ID
+  const certificates = loadCertificatesFromStorage()
+  const certificate = certificates.find(cert => cert.id === config.certificateId)
+  const certificateName = certificate?.name || 'Unknown Certificate'
 
   const [isPreparingQuestions, setIsPreparingQuestions] = useState(false)
 
@@ -135,7 +141,7 @@ export default function QuizSessionComponent({ config, existingQuestions, onComp
               }
             </h2>
             <p className="text-slate-500">
-              Creating personalized {config.certificateName} questions...
+              Creating personalized {certificateName} questions...
             </p>
             {session.currentQuestions.length > 0 && (
               <div className="mt-4">
@@ -167,7 +173,7 @@ export default function QuizSessionComponent({ config, existingQuestions, onComp
       <QuizCompletion
         score={session.score}
         totalQuestions={session.config.numberOfQuestions}
-        title={`${config.certificateName} quiz`}
+        title={`${certificateName} quiz`}
         onBack={onBack}
         showRestartButton={false}
       />

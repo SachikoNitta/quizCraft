@@ -140,9 +140,9 @@ export async function POST(request: NextRequest) {
     const config: QuizConfig = await request.json()
 
     // Validate the request
-    if (!config.apiKey || !config.certificateName || !config.numberOfQuestions || !config.language) {
+    if (!config.apiKey || !config.certificateId || !config.certificateName || !config.numberOfQuestions || !config.language) {
       return NextResponse.json(
-        { error: 'Missing required fields: apiKey, certificateName, numberOfQuestions, language' },
+        { error: 'Missing required fields: apiKey, certificateId, certificateName, numberOfQuestions, language' },
         { status: 400 }
       )
     }
@@ -209,7 +209,7 @@ export async function POST(request: NextRequest) {
     const quiz = {
       id: `quiz-${Date.now()}`,
       title: `${config.certificateName} Practice Quiz`,
-      certificateName: config.certificateName,
+      certificateId: config.certificateId,
       language: config.language,
       questions: allQuestions.slice(0, config.numberOfQuestions), // Ensure we don't exceed requested count
       createdAt: new Date()

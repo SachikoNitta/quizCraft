@@ -130,9 +130,9 @@ export async function POST(request: NextRequest) {
     const questionNumber: number = body.questionNumber || 1
 
     // Validate the request
-    if (!config.apiKey || !config.certificateName || !config.language) {
+    if (!config.apiKey || !config.certificateId || !config.certificateName || !config.language) {
       return NextResponse.json(
-        { error: 'Missing required fields: apiKey, certificateName, language' },
+        { error: 'Missing required fields: apiKey, certificateId, certificateName, language' },
         { status: 400 }
       )
     }

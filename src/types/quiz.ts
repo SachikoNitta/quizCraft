@@ -1,5 +1,19 @@
+export interface AppSettings {
+  apiKey: string
+  language: string
+}
+
+export interface Certificate {
+  id: string
+  name: string
+  description?: string
+  createdAt: Date
+  questionSetId?: string
+}
+
 export interface QuizConfig {
   apiKey: string
+  certificateId: string
   certificateName: string
   numberOfQuestions: number
   language: string
@@ -29,10 +43,18 @@ export interface QuizSession {
   config: QuizConfig
 }
 
+export interface QuestionSet {
+  id: string
+  certificateId: string
+  questions: QuizQuestion[]
+  createdAt: Date
+  updatedAt: Date
+}
+
 export interface QuizStorage {
   id: string
   title: string
-  certificateName: string
+  certificateId: string
   language: string
   questions: QuizQuestion[]
   createdAt: Date
